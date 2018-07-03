@@ -4,6 +4,7 @@
 [Bb]uild/
 [Dd]oxygen/
 NuiDatabase/*
+.vs/*
 Assets/MORPH3D/*
 Assets/StreamingAssets/MORPH3D/*
 

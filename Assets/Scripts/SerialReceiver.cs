@@ -4,31 +4,29 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-//#if UDUINOLITE_READY
 using System.IO.Ports;
-//#endif
 
-public class UduinoLite : MonoBehaviour {
+public class SerialReceiver : MonoBehaviour {
 
     #region Instance
-    public static UduinoLite Instance
+    public static SerialReceiver Instance
     {
         get
         {
             if (_instance != null)
                 return _instance;
 
-            UduinoLite[] uduinoManagers = FindObjectsOfType(typeof(UduinoLite)) as UduinoLite[];
-            if (uduinoManagers.Length == 0)
+            SerialReceiver[] serialManagers = FindObjectsOfType(typeof(SerialReceiver)) as SerialReceiver[];
+            if (serialManagers.Length == 0)
             {
-                Debug.Log("UduinoLite not present on the scene. Creating a new one.");
-                UduinoLite manager = new GameObject("UduinoLite").AddComponent<UduinoLite>();
+                Debug.Log("SerialReceiver not present on the scene. Creating a new one.");
+                SerialReceiver manager = new GameObject("serialManagers").AddComponent<SerialReceiver>();
                 _instance = manager;
                 return _instance;
             }
             else
             {
-                return uduinoManagers[0];
+                return serialManagers[0];
             }
         }
         set
@@ -37,15 +35,18 @@ public class UduinoLite : MonoBehaviour {
                 _instance = value;
             else
             {
-                Debug.Log("You can only use one UduinoLite. Destroying the new one attached to the GameObject " + value.gameObject.name);
+                Debug.Log("You can only use one SerialReceiver. Destroying the new one attached to the GameObject " + value.gameObject.name);
                 Destroy(value);
             }
         }
     }
-    private static UduinoLite _instance = null;
+    private static SerialReceiver _instance = null;
     #endregion
-    
-    [Header("UduinoLite")]
+
+
+    public HiveTrackerReceiver hiveTracker;
+
+    [Header("SerialReceiver")]
     public bool OpenOnStart = true;
 
     [Header("Serial Settings")]
@@ -79,6 +80,7 @@ public class UduinoLite : MonoBehaviour {
     [System.Serializable]
     public class ValueReceived : UnityEvent<string> {}
     [Header("Events")]
+    public bool useReceiveEvents = false;
     public ValueReceived ValueReceivedEvent;
 
     private void Start()
@@ -87,6 +89,52 @@ public class UduinoLite : MonoBehaviour {
             OpenPort();
     }
 
+
+
+    void Awake()
+    {
+        ChildThread = new Thread(ChildThreadLoop);
+        ChildThread.Start();
+    }
+
+
+    void Update()
+    {
+        MainThreadWait.WaitOne();
+        MainThreadWait.Reset();
+
+
+        if(mainThreadCallback != null)
+        {
+            try
+            {
+                mainThreadCallback();
+            } catch (Exception e) {
+                Debug.Log(e);
+            }
+            mainThreadCallback = null;
+        }
+
+
+
+        if (useReceiveEvents)
+        {
+            lock (readQueue)
+            {
+                if (readQueue.Count > 0)
+                    ValueReceivedEvent.Invoke(readQueue.Dequeue());
+            }
+        }
+        
+
+
+
+        ChildThreadWait.Set();
+    }
+
+
+
+    #region Open Serial
     void OpenPort()
     {
         try
@@ -114,116 +162,25 @@ public class UduinoLite : MonoBehaviour {
 
     }
 
-
-#region Thread
-    Action callbackAction = null;
-    Thread ChildThread = null;
-    EventWaitHandle ChildThreadWait = new EventWaitHandle(true, EventResetMode.ManualReset);
-    EventWaitHandle MainThreadWait = new EventWaitHandle(true, EventResetMode.ManualReset);
-
-    Queue<string> readQueue = new Queue<string>();
+    #endregion
 
 
-    void ChildThreadLoop()
-    {
-        ChildThreadWait.Reset();
-        ChildThreadWait.WaitOne();
-
-        while (true)
-        {
-            ChildThreadWait.Reset();
-
-            if (callbackAction == null)
-            {
-                switch(serialCapabilities)
-                {
-                    case SerialCapabilities.Read:
-                        ReadArduino();
-                        break;
-                    case SerialCapabilities.Write:
-                        WriteArduino();
-                        break;
-                    case SerialCapabilities.ReadWrite:
-                        ReadArduino();
-                        WriteArduino();
-                        break;
-                }
-            }
-            else
-            {
-                callbackAction();
-                callbackAction = null;
-            }
-           // Debug.Log("wait for end of frame");
-            WaitHandle.SignalAndWait(MainThreadWait, ChildThreadWait);
-        }
-    }
-
-    void ReadArduino()
-    {
-        try
-        {
-            try
-            {
-                /*
-                int lineCount = 0;
-                string tempBuffer = "";
-                for (int i=0; i <150;i++)
-                {
-                    char a = (char)serial.ReadByte();
-                    tempBuffer += a.ToString();
-                  //  Debug.Log(a);
-                    if (tempBuffer.EndsWith("\n"))
-                    {
-                        Debug.Log(tempBuffer);
-                        if (lineCount > 5)
-                        {
-                            serial.DiscardOutBuffer();
-                            serial.DiscardInBuffer();
-                        }
-                    }
-                }
-                */
-                string readedLine = serial.ReadLine();
-                lock(readQueue)
-                    readQueue.Enqueue(readedLine);
-            }
-            catch (TimeoutException e)
-            {
-                Debug.Log(e);
-            }
-        } catch(Exception e)
-        {
-            Debug.Log(e);
-        }
-    }
-
-    void WriteArduino()
-    {
-
-    }
-
+    #region Closing Serial port
     private void OnApplicationPause(bool pause)
     {
-        if(pause)
-        Close();
+       // if (pause)
+       //     Close();
     }
-
 
     private void OnApplicationQuit()
     {
-
         Close();
-
     }
-
 
     private void OnDisable()
     {
         Close();
     }
-
-
 
     void Close()
     {
@@ -246,47 +203,145 @@ public class UduinoLite : MonoBehaviour {
             {
                 serial.Close();
                 serial = null;
-                Debug.Log("CLosed");
+                Debug.Log("Serial closed.");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Debug.Log(e);
             }
 
         }
     }
+    #endregion
 
-    void Awake()
+    #region Serial Reading
+    Action mainThreadCallback = null;
+    Thread ChildThread = null;
+    EventWaitHandle ChildThreadWait = new EventWaitHandle(true, EventResetMode.ManualReset);
+    EventWaitHandle MainThreadWait = new EventWaitHandle(true, EventResetMode.ManualReset);
+
+    Queue<string> readQueue = new Queue<string>();
+
+    void ChildThreadLoop()
     {
-        ChildThread = new Thread(ChildThreadLoop);
-        ChildThread.Start();
-    }
+        ChildThreadWait.Reset();
+        ChildThreadWait.WaitOne();
 
-
-    void Update()
-    {
-        MainThreadWait.WaitOne();
-        MainThreadWait.Reset();
-
-        //  Debug.Log("Do stuff to A");
-        //callbackAction = () => Debug.Log("Do stuff");
-
-        // Copy Results out of the thread
-        // Copy pending changes into the thread
-        lock (readQueue)
+        while (true)
         {
-            if (readQueue.Count > 0)
-                ValueReceivedEvent.Invoke(readQueue.Dequeue());
+            ChildThreadWait.Reset();
+
+            switch(serialCapabilities)
+            {
+                case SerialCapabilities.Read:
+                    ReadArduino();
+                    break;
+                case SerialCapabilities.Write:
+                    WriteArduino();
+                    break;
+                case SerialCapabilities.ReadWrite:
+                    ReadArduino();
+                    WriteArduino();
+                    break;
+            }
+            
+           // Debug.Log("wait for end of frame");
+            WaitHandle.SignalAndWait(MainThreadWait, ChildThreadWait);
         }
-
-
-        ChildThreadWait.Set();
     }
+
+    void ReadArduino()
+    {
+        try
+        {
+            try
+            {
+                #region remove
+                /*
+                int lineCount = 0;
+                string tempBuffer = "";
+                for (int i=0; i <150;i++)
+                {
+                    char a = (char)serial.ReadByte();
+                    tempBuffer += a.ToString();
+                  //  Debug.Log(a);
+                    if (tempBuffer.EndsWith("\n"))
+                    {
+                        Debug.Log(tempBuffer);
+                        if (lineCount > 5)
+                        {
+                            serial.DiscardOutBuffer();
+                            serial.DiscardInBuffer();
+                        }
+                    }
+                }
+                */
+                #endregion
+                string readedLine = serial.ReadLine();
+                if(useReceiveEvents) lock (readQueue) readQueue.Enqueue(readedLine);
+                
+                ProcessData(readedLine);
+            }
+            catch (TimeoutException e)
+            {
+                Debug.Log(e);
+            }
+        } catch(Exception e)
+        {
+            Debug.Log(e);
+        }
+    }
+
+
+    void ProcessData(string inData)
+    {
+        /*
+              if (v.Length != 37)
+              {
+                  Debug.Log("Loss of data for: \r\n " + v);
+                  return;
+              }
+              */
+
+        string[] splitted = inData.Split('\t');
+        if (splitted.Length != 4)
+        {
+            Debug.Log("Error when splitting: \r\n " + inData);
+            return;
+        }
+        /*
+                for(int i = 0;i < splitted.Length;i++)
+                {
+                    Debug.Log(splitted[i]);
+                }
+                */
+        try
+        {
+
+            float x = float.Parse(splitted[splitted.Length - 1]);
+            float y = float.Parse(splitted[splitted.Length - 2]);
+            float z = float.Parse(splitted[splitted.Length - 3]);
+            float w = float.Parse(splitted[splitted.Length - 4]);
+
+            mainThreadCallback = () =>
+            {
+                hiveTracker.SetRotation(x, y, z, w);
+            };
+
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e);
+        }
+        return;
+    }
+    void WriteArduino() { }
+
 
     #endregion
 
 
-    #region List port
+    #region List port on right click
     [ContextMenu("List available serial ports")]
     private void ListPort()
     {
@@ -298,7 +353,7 @@ public class UduinoLite : MonoBehaviour {
         }
         Debug.Log("Port available in the computer:");
         foreach (string s in portList)
-            Debug.Log(portList);
+            Debug.Log(s);
     }
     #endregion
 
