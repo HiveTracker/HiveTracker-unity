@@ -8,7 +8,7 @@ public class BLEConnection
     AndroidJavaObject androidPlugin { get { return _class.GetStatic<AndroidJavaObject>("instance"); } }
     BLECommunication communicationController = null;
 
-    string javaClassName = "com.mteys.uduinobluetooth.AndroidBluetooth";
+    string javaClassName = "com.hivetracker.ble.AndroidBluetooth";
     public bool bluetoothStarted = false;
 
     Dictionary<string, string> availableDevices = new Dictionary<string, string>();
@@ -48,13 +48,13 @@ public class BLEConnection
             ScanForDevices();
     }
 
-    public float scanDuration = 5;
+    public float scanDuration = 15;
 
 
     public void ScanForDevices()
     {
         Debug.Log("Scan for devices");
-        androidPlugin.Call("_ScanForPeripherals", scanDuration * 1000);
+        androidPlugin.Call("_ScanForPeripherals", (int)(scanDuration * 1000));
         BluetoothInterface.Instance.StartSearching();
     }
 

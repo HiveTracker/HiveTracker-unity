@@ -7,8 +7,7 @@
 
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
 
-    <application android:allowBackup="true" android:label="HiveTracker BLE"
-        android:supportsRtl="true">
+    <application android:allowBackup="true" android:supportsRtl="true">
         <activity
             android:name="com.unity3d.player.UnityPlayerProxyActivity" >
             <intent-filter>
