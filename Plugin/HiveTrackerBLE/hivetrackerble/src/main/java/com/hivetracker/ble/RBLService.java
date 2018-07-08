@@ -1,4 +1,4 @@
-package com.mteys.uduinobluetooth;
+package com.hivetracker.ble;
 /*
 * Copyright (C) 2013 The Android Open Source Project
 *

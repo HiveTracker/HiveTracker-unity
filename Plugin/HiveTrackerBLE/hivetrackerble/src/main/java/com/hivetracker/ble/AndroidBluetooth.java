@@ -1,4 +1,4 @@
-package com.mteys.uduinobluetooth;
+package com.hivetracker.ble;
 
 import java.util.List;
 import java.util.ArrayList;

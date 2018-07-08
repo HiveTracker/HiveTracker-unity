@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mteys.uduinoserial">
+    package="com.hivetracker.ble">
 
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
@@ -7,7 +7,7 @@
 
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
 
-    <application android:allowBackup="true" android:label="Uduino Bluetooth"
+    <application android:allowBackup="true" android:label="HiveTracker BLE"
         android:supportsRtl="true">
         <activity
             android:name="com.unity3d.player.UnityPlayerProxyActivity" >
@@ -16,6 +16,6 @@
                 <!-- <category android:name="android.intent.category.LAUNCHER" /> -->
             </intent-filter>
         </activity>
-        <service android:name="com.mteys.uduinobluetooth.RBLService" android:enabled="true" />
+        <service android:name="com.hivetracker.ble.RBLService" android:enabled="true" />
     </application>
 </manifest>

@@ -56,7 +56,7 @@ android.libraryVariants.all { variant ->
     String sourceAARName = "${project.name}-${variant.name}.aar";
     // Target.
     String targetAssetFolder = "Assets/Plugins";
-    String targetAARFolder = "${rootDir.getPath()}/../${targetAssetFolder}"; // Navigate into 'Assets'
+    String targetAARFolder = "${rootDir.getPath()}/../../${targetAssetFolder}"; // Navigate into 'Assets'
     String targetAARName = "HiveTrackerBLE.aar"; // The form you ship your plugin
     // Create task.
     task(deployTaskName, dependsOn: dependencyTaskName, type: Copy) {
