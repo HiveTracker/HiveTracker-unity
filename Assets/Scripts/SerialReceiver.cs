@@ -83,9 +83,10 @@ public class SerialReceiver : MonoBehaviour {
     public bool useReceiveEvents = false;
     public ValueReceived ValueReceivedEvent;
 
+    public bool startSerial = false;
     private void Start()
     {
-        if (OpenOnStart)
+        if (OpenOnStart && startSerial)
             OpenPort();
     }
 
@@ -93,8 +94,14 @@ public class SerialReceiver : MonoBehaviour {
 
     void Awake()
     {
-        ChildThread = new Thread(ChildThreadLoop);
-        ChildThread.Start();
+        if (startSerial)
+        {
+            ChildThread = new Thread(ChildThreadLoop);
+            ChildThread.Start();
+        } else
+        {
+            this.enabled = false;
+        }
     }
 
 
@@ -131,7 +138,6 @@ public class SerialReceiver : MonoBehaviour {
 
         ChildThreadWait.Set();
     }
-
 
 
     #region Open Serial
