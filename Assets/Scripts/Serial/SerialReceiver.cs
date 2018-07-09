@@ -43,7 +43,6 @@ public class SerialReceiver : MonoBehaviour {
     private static SerialReceiver _instance = null;
     #endregion
 
-
     public HiveTrackerReceiver hiveTracker;
 
     [Header("SerialReceiver")]
@@ -133,9 +132,6 @@ public class SerialReceiver : MonoBehaviour {
             }
         }
         
-
-
-
         ChildThreadWait.Set();
     }
 

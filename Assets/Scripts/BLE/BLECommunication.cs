@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using SimpleJSON;
 
-public class BLECommunication : MonoBehaviour
+public class BLEReceiver : MonoBehaviour
 {
     public BLEConnection connection = null;
-    public static BLECommunication Instance = null;
+    public static BLEReceiver Instance = null;
     public string id = null;
 
     public void Awake()
@@ -15,13 +15,11 @@ public class BLECommunication : MonoBehaviour
         Instance = this;
     }
 
-    public void DeviceDetected()
-    {
-    }
+    public void DeviceDetected() { }
 
     public void CallUnityEvent(string s)
     {
-    Debug.Log("UnityEvent: " + s);
+        Debug.Log("UnityEvent: " + s);
     }
 
     public void PluginMessageReceived(string s)
@@ -40,12 +38,6 @@ public class BLECommunication : MonoBehaviour
     {
         Debug.Log("USB Disconnected");
     }
-    
-    public void SendData(byte[] data)
-    {
-        //   androidPlugin.Call("_SendData", data);
-    }
-
 
     void OnBleDidInitialize(string message)
     {

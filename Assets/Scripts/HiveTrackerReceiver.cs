@@ -5,7 +5,6 @@ using System;
 
 public class HiveTrackerReceiver : MonoBehaviour {
 
-
     public Vector3 rotationOffset;
 
     public Transform accelerometer;

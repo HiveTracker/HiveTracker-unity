@@ -2,43 +2,76 @@
 using UnityEngine;
 
 
-public class BLEConnection
+public class BLEConnection : MonoBehaviour
 {
+    public bool useBLE = true;
+
+    //todo : use that;
+    public bool deviceConnected = false;
+
     AndroidJavaClass _class = null;
     AndroidJavaObject androidPlugin { get { return _class.GetStatic<AndroidJavaObject>("instance"); } }
-    BLECommunication communicationController = null;
+    BLEReceiver communicationController = null;
 
     string javaClassName = "com.hivetracker.ble.AndroidBluetooth";
     public bool bluetoothStarted = false;
 
     Dictionary<string, string> availableDevices = new Dictionary<string, string>();
 
-    public void CreateDebugCanvas()
-    {
-        GameObject debugCanvas = new GameObject();
-        debugCanvas.AddComponent<Uduino.UduinoDebugCanvas>();
-    }
+    public float scanDuration = 5;
 
-    public void FindBoards()
+
+    #region Initialization
+    public void Start()
     {
         CreateDebugCanvas();
-        Discover();
-        BluetoothInterface.Instance.SetBLEConnection(this);
+
+        if (useBLE)
+        {
+            Discover();
+            BluetoothInterface.Instance.SetBLEConnection(this);
+        }
     }
 
     void InitCommunication(string communicationGoName)
     {
         _class = new AndroidJavaClass(javaClassName); //The arduino baord should be found automatically
         _class.CallStatic("start", communicationGoName);
-        Debug.Log("Starting service with name " + communicationGoName);
-        //Debug.Log("Setting baud rate to:" + _manager.BaudRate);
-        //androidPlugin.Call("ChangeBaudRate", _manager.BaudRate);
+        Debug.Log("Starting Android BLEService with name " + communicationGoName);
     }
+
+    BLEReceiver CreateCommunicationController()
+    {
+        string randName = "AndroidCommunication" + Random.Range(0, 100);
+        BLEReceiver communication = new GameObject(randName).AddComponent<BLEReceiver>();
+        communication.connection = this;
+        communication.id = randName;
+        return communication;
+    }
+
+    #endregion
+
+    #region Debug
+    public void CreateDebugCanvas()
+    {
+        GameObject debugCanvas = new GameObject();
+        debugCanvas.AddComponent<AndroidDebugCanvas>();
+    }
+
+    // To remove
+    public string GetListOfDevices()
+    {
+        string listOfDevices = "";
+        listOfDevices = androidPlugin.Call<string>("_GetListOfDevices");
+        Debug.Log("listOfDevices" + listOfDevices);
+        return listOfDevices;
+    }
+    #endregion
 
     #region Scanning
     public void Discover()
     {
-        if (BLECommunication.Instance == null)
+        if (BLEReceiver.Instance == null)
         {
             communicationController = CreateCommunicationController();
             InitCommunication(communicationController.id);
@@ -47,9 +80,6 @@ public class BLEConnection
         if (bluetoothStarted)
             ScanForDevices();
     }
-
-    public float scanDuration = 15;
-
 
     public void ScanForDevices()
     {
@@ -69,24 +99,11 @@ public class BLEConnection
         }
     }
 
-    public void List()
-    {
-        GetListOfDevices();
-    }
-
     public bool SearchDevicesDidFinish()
     {
         bool searchDevicesDidFinish = false;
         searchDevicesDidFinish = androidPlugin.Call<bool>("_SearchDeviceDidFinish");
         return searchDevicesDidFinish;
-    }
-
-    public string GetListOfDevices()
-    {
-        string listOfDevices = "";
-        listOfDevices = androidPlugin.Call<string>("_GetListOfDevices");
-        Debug.Log("listOfDevices" + listOfDevices);
-        return listOfDevices;
     }
     #endregion
 
@@ -109,7 +126,6 @@ public class BLEConnection
     public void BoardConnected()
     {
         Debug.Log("Board connecged");
-     //   OpenUduinoDevice("");
     }
     #endregion
 
@@ -125,7 +141,7 @@ public class BLEConnection
 
     public void DisconnectedFromSource()
     {
-            BluetoothInterface.Instance.UduinoDisconnected("name");
+        BluetoothInterface.Instance.BLEDisconected("name");
     }
     #endregion
 
@@ -136,29 +152,18 @@ public class BLEConnection
         result = androidPlugin.Call<string>("_GetData");
         return result;
     }
-    #endregion
-
-    BLECommunication CreateCommunicationController()
-    {
-        string randName = "AndroidCommunication" + Random.Range(0, 100);
-        BLECommunication communication = new GameObject(randName).AddComponent<BLECommunication>();
-        communication.connection = this;
-        communication.id = randName;
-        return communication;
-    }
 
     public void PluginWrite(string message)
     {
         androidPlugin.Call("_SendData", message);
         Debug.Log("_SendData : " + message);
-        //  Log.Info("<color=#4CAF50>" + message + "</color> sent to <color=#2196F3>[" + connectedDevice.name + "]</color>");
     }
 
     public void PluginReceived(string message)
     {
-
         BluetoothInterface.Instance.LastReceviedValue(message);
         Debug.Log(message);
     }
+    #endregion
 
 }

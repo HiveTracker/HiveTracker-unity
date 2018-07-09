@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 
 
-
 public enum AndroidInterface
 {
     Minimal,
@@ -74,7 +73,7 @@ public class BLEDeviceButton_Interface
                 BluetoothInterface[] uduinoManagers = FindObjectsOfType(typeof(BluetoothInterface)) as BluetoothInterface[];
                 if (uduinoManagers.Length == 0)
                 {
-                    Debug.Log("UduinoManager not present on the scene. Creating a new one.");
+                    Debug.Log("BluetoothInterface not present on the scene. Creating a new one.");
                     BluetoothInterface manager = new GameObject("BluetoothInterface").AddComponent<BluetoothInterface>();
                     _instance = manager;
                     return _instance;
@@ -90,7 +89,7 @@ public class BLEDeviceButton_Interface
                     _instance = value;
                 else
                 {
-                Debug.Log("You can only use one UduinoManager. Destroying the new one attached to the GameObject " + value.gameObject.name);
+                Debug.Log("You can only use one BluetoothInterface. Destroying the new one attached to the GameObject " + value.gameObject.name);
                     Destroy(value);
                 }
             }
@@ -331,7 +330,7 @@ public class BLEDeviceButton_Interface
             }
         }
 
-        public void UduinoDisconnected(string name)
+        public void BLEDisconected(string name)
         {
             BLEDeviceButton_Interface currentDeviceBtn = null;
             if (devicesButtons.TryGetValue(name, out currentDeviceBtn))
