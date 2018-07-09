@@ -560,23 +560,7 @@ public class AndroidBluetooth extends Fragment {
 
         return jsonListString;
     }
-
-    /*
-    // We don't use this one
-    public boolean _ConnectPeripheralAtIndex(int peripheralIndex)
-    {
-        Log.d(TAG,"_ConnectPeripheralAtIndex: " + peripheralIndex);
-        BluetoothDevice device = _mDevice.get(peripheralIndex);
-
-        _mDeviceAddress = device.getAddress();
-        _mDeviceName = device.getName();
-
-        Intent gattServiceIntent = new Intent(_unityActivity, RBLService.class);
-        _unityActivity.bindService(gattServiceIntent, _mServiceConnection, _unityActivity.BIND_AUTO_CREATE);
-        return true;
-    }
-    */
-
+    
     public boolean _ConnectPeripheral(String peripheralID)
     {
         inBuffer = "";
