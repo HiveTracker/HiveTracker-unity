@@ -25,7 +25,6 @@ public class BLEReceiver : MonoBehaviour
     public void PluginMessageReceived(string s)
     {
         Debug.Log("PluginMessageReceived: " + s);
-
         connection.PluginReceived(s);
     }
 

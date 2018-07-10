@@ -560,7 +560,7 @@ public class AndroidBluetooth extends Fragment {
 
         return jsonListString;
     }
-    
+
     public boolean _ConnectPeripheral(String peripheralID)
     {
         inBuffer = "";

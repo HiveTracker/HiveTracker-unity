@@ -132,6 +132,7 @@ public class BLEConnection : MonoBehaviour
     #region Disconnect
     public bool Disconnect()
     {
+        Debug.Log("CLick on disconnect");
         if(androidPlugin.Call<bool>("_Disconnect"))
         {
             DisconnectedFromSource();
@@ -141,7 +142,7 @@ public class BLEConnection : MonoBehaviour
 
     public void DisconnectedFromSource()
     {
-        BluetoothInterface.Instance.BLEDisconected("name");
+        BluetoothInterface.Instance.BLEDisconected("UART");
     }
     #endregion
 
