@@ -30,3 +30,6 @@ sysinfo.txt
 *.bat
 doc.xml
 test.apk
+Plugin/HiveWinBLE/HiveWinBLE.sdf
+Plugin/HiveWinBLE/HiveWinBLE.opensdf
+Plugin/HiveWinBLE/x64/

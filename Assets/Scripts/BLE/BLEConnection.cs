@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using System;
+using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 
 public enum ConnectionType
@@ -22,6 +24,7 @@ public class BLEConnection : MonoBehaviour
     Dictionary<string, string> availableDevices = new Dictionary<string, string>();
     public ConnectionType connectionType = ConnectionType.Windows;
     public float scanDuration = 5;
+    public string boardConnectedName;
 
 
     [Header("Debug settings")]
@@ -30,14 +33,80 @@ public class BLEConnection : MonoBehaviour
     BLEReceiver communicationController = null;
     public BluetoothState bluetoothState = BluetoothState.Disabled;
 
+    #region Android
     // Android BLE
     AndroidJavaClass _class = null;
     AndroidJavaObject androidPlugin { get { return _class.GetStatic<AndroidJavaObject>("instance"); } }
     string javaClassName = "com.hivetracker.ble.AndroidBluetooth";
+    #endregion
 
-
+    #region Windows
     // Windows BLE
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEConnectCallbacks(
+    [MarshalAs(UnmanagedType.FunctionPtr)]SendBluetoothMessageDelegate sendMessage,
+    [MarshalAs(UnmanagedType.FunctionPtr)]DebugDelegate log,
+    [MarshalAs(UnmanagedType.FunctionPtr)]DebugDelegate warning,
+    [MarshalAs(UnmanagedType.FunctionPtr)]DebugDelegate error);
+    public delegate void DebugDelegate([MarshalAs(UnmanagedType.LPStr)]string message);
+    public delegate void SendBluetoothMessageDelegate([MarshalAs(UnmanagedType.LPStr)]string gameObjectName, [MarshalAs(UnmanagedType.LPStr)]string methodName, [MarshalAs(UnmanagedType.LPStr)]string message);
 
+    private static DebugDelegate _LogDelegate;
+    private static DebugDelegate _WarningDelegate;
+    private static DebugDelegate _ErrorDelegate;
+    private static SendBluetoothMessageDelegate _SendMessageDelegate;
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLELog([MarshalAs(UnmanagedType.LPStr)]string message);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEInitialize(bool asCentral, bool asPeripheral, string goName);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEDeInitialize();
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEPauseMessages(bool isPaused);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEScanForPeripheralsWithServices([MarshalAs(UnmanagedType.LPStr)]string serviceUUIDsString, bool allowDuplicates, bool rssiOnly, bool clearPeripheralList);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLERetrieveListOfPeripheralsWithServices([MarshalAs(UnmanagedType.LPStr)]string serviceUUIDsString);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEStopScan();
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEConnectToPeripheral([MarshalAs(UnmanagedType.LPStr)]string name);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEDisconnectPeripheral([MarshalAs(UnmanagedType.LPStr)]string name);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEReadCharacteristic([MarshalAs(UnmanagedType.LPStr)]string name, [MarshalAs(UnmanagedType.LPStr)]string service, [MarshalAs(UnmanagedType.LPStr)]string characteristic);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEWriteCharacteristic([MarshalAs(UnmanagedType.LPStr)]string name, [MarshalAs(UnmanagedType.LPStr)]string service, [MarshalAs(UnmanagedType.LPStr)]string characteristic, byte[] data, int length, bool withResponse);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLESubscribeCharacteristic([MarshalAs(UnmanagedType.LPStr)]string name, [MarshalAs(UnmanagedType.LPStr)]string service, [MarshalAs(UnmanagedType.LPStr)]string characteristic);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEUnSubscribeCharacteristic([MarshalAs(UnmanagedType.LPStr)]string name, [MarshalAs(UnmanagedType.LPStr)]string service, [MarshalAs(UnmanagedType.LPStr)]string characteristic);
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _winBluetoothLEDisconnectAll();
+
+    [DllImport("HiveWinBLE")]
+    private static extern void _threadLoop();
+
+    string serviceGUID = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
+    string subscribeCharacteristic = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
+    string writeCharacteristic = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
+
+    static readonly Queue<Action> incommingMessages = new Queue<Action>();
+    #endregion
 
     #region Initialization
     public void Start()
@@ -74,7 +143,6 @@ public class BLEConnection : MonoBehaviour
         communication.id = randName;
         return communication;
     }
-
     #endregion
 
     #region Debug
@@ -137,21 +205,33 @@ public class BLEConnection : MonoBehaviour
     public bool IsDeviceConnected()
     {
         bool isConnected = false;
-        isConnected = androidPlugin.Call<bool>("_IsDeviceConnected");
+        if (connectionType == ConnectionType.Android)
+            isConnected = androidPlugin.Call<bool>("_IsDeviceConnected");
+        else
+            Debug.Log("Not implemented");
+
         return isConnected;
     }
 
     public bool ConnectPeripheral(string peripheralID, string name)
     {
         bool result = false;
-        result = androidPlugin.Call<bool>("_ConnectPeripheral", peripheralID);
+        if (connectionType == ConnectionType.Android)
+        {
+            result = androidPlugin.Call<bool>("_ConnectPeripheral", peripheralID);
+        }
+        else if (connectionType == ConnectionType.Windows)
+        {
+            _winBluetoothLEConnectToPeripheral(peripheralID);
+            result = true;
+        }
         BluetoothInterface.Instance.UduinoConnecting(name);
         return result;
     }
 
     public void BoardConnected()
     {
-        Debug.Log("Board connecged");
+        Debug.Log("Board connected");
     }
     #endregion
 
@@ -159,16 +239,40 @@ public class BLEConnection : MonoBehaviour
     public bool Disconnect()
     {
         Debug.Log("CLick on disconnect");
-        if(androidPlugin.Call<bool>("_Disconnect"))
+
+        if (connectionType == ConnectionType.Android)
         {
-            DisconnectedFromSource();
+            if (androidPlugin.Call<bool>("_Disconnect")) {
+                DisconnectedFromSource();
+            }
         }
+        else if (connectionType == ConnectionType.Windows)
+        {
+            UnSubscribeRead();
+            _winBluetoothLEDisconnectPeripheral(connection.connectedDevice.identity);
+        }
+
+
         return true;
     }
 
     public void DisconnectedFromSource()
     {
-        BluetoothInterface.Instance.BLEDisconected("UART");
+        BluetoothInterface.Instance.BLEDisconected("UART"); // Todo : the name is hard coded here
+    }
+    #endregion
+
+
+    #region WIndows specific
+    void SubscribeRead()
+    {
+        _winBluetoothLESubscribeCharacteristic(connection.connectedDevice.identity, serviceGUID, writeCharacteristic);
+    }
+
+    void UnSubscribeRead()
+    {
+        Debug.Log("<color=#ff0000>unsubscriberead</color>");
+        _winBluetoothLEUnSubscribeCharacteristic(connection.connectedDevice.identity, serviceGUID, writeCharacteristic);
     }
     #endregion
 
