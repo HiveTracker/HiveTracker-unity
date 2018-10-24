@@ -44,7 +44,7 @@ public class BLEReceiver : MonoBehaviour
 
         if (message == "Success")
         {
-            connection.bluetoothStarted = true;
+            connection.bluetoothState = BluetoothState.Running;
             connection.Discover();
         }
         else
@@ -59,7 +59,7 @@ public class BLEReceiver : MonoBehaviour
 
         if (message == "Success")
         {
-            connection.BoardConnected(); ;
+            connection.BoardConnected();
         }
         else 
         {
@@ -78,7 +78,6 @@ public class BLEReceiver : MonoBehaviour
         {
         }
     }
-
 
     public void PluginWrite(string m) { }
 

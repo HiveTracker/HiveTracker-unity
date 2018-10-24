@@ -342,7 +342,6 @@ public class SerialReceiver : MonoBehaviour {
 
     #endregion
 
-
     #region List port on right click
     [ContextMenu("List available serial ports")]
     private void ListPort()
@@ -358,6 +357,5 @@ public class SerialReceiver : MonoBehaviour {
             Debug.Log(s);
     }
     #endregion
-
 
 }

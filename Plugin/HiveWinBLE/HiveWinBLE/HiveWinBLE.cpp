@@ -41,7 +41,7 @@
 void LogToFile(const char* message)
 {
 	FILE* f = NULL;
-	fopen_s(&f, "C:\\Users\\marct\\Documents\\UnityProjects\\Uduino\\log.txt", "a+");
+	fopen_s(&f, "C:\\Users\\marct\\Documents\\Telecom\\HiveTracker-unity\\log.txt", "a+");
 	if (f) {
 		fprintf(f, message);
 		fprintf(f, "\n");
@@ -55,7 +55,7 @@ static DebugCallback debugErrorCallback = NULL;
 static SendBluetoothMessageCallback sendMessageCallback = NULL;
 //static SendBluetoothFunctionCallback sendFunctionCallback = NULL;
 
-static const char* gameObjectName = "DesktopBLECommunication";
+static const char* gameObjectName = "BLEReceiver";
 std::string currentBufferString;
 bool isTreatindData = false;
 
