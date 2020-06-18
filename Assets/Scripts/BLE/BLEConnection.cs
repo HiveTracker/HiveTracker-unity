@@ -19,13 +19,11 @@ public enum BluetoothState
 
 public class BLEConnection : MonoBehaviour
 {
-
     [Header("Bluetooth settings")]
     Dictionary<string, string> availableDevices = new Dictionary<string, string>();
     public ConnectionType connectionType = ConnectionType.Windows;
     public float scanDuration = 5;
     public string boardConnectedName;
-
 
     [Header("Debug settings")]
     //todo : use that;
@@ -249,7 +247,8 @@ public class BLEConnection : MonoBehaviour
         else if (connectionType == ConnectionType.Windows)
         {
             UnSubscribeRead();
-            _winBluetoothLEDisconnectPeripheral(connection.connectedDevice.identity);
+            Debug.Log("TODO");
+            //_winBluetoothLEDisconnectPeripheral(connection.connectedDevice.identity);
         }
 
 
@@ -266,13 +265,15 @@ public class BLEConnection : MonoBehaviour
     #region WIndows specific
     void SubscribeRead()
     {
-        _winBluetoothLESubscribeCharacteristic(connection.connectedDevice.identity, serviceGUID, writeCharacteristic);
+        Debug.Log("TODO");
+//        _winBluetoothLESubscribeCharacteristic(connection.connectedDevice.identity, serviceGUID, writeCharacteristic);
     }
 
     void UnSubscribeRead()
     {
         Debug.Log("<color=#ff0000>unsubscriberead</color>");
-        _winBluetoothLEUnSubscribeCharacteristic(connection.connectedDevice.identity, serviceGUID, writeCharacteristic);
+        Debug.Log("TODO");
+//        _winBluetoothLEUnSubscribeCharacteristic(connection.connectedDevice.identity, serviceGUID, writeCharacteristic);
     }
     #endregion
 
